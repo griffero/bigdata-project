@@ -1,0 +1,5 @@
+groupon
+livingsocial
+yipit
+woot
+coupon
