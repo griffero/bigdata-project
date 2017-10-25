@@ -1,4 +1,5 @@
 from __future__ import division
+import operator
 
 from mrjob.job import MRJob
 from mrjob.step import MRStep
@@ -11,6 +12,7 @@ BUSINESS_CATEGORIES = 1
 BUSINESS_STARS = 1
 REVIEW_ID = 1
 REVIEW_STARS = 2
+LIST_SIZE = 5
 
 class UniqueReview(MRJob):
     INPUT_PROTOCOL = JSONValueProtocol
@@ -75,7 +77,18 @@ class UniqueReview(MRJob):
             average_stars_of_coupons_without_reviews = sum_of_stars_in_review_without_coupons/float(number_of_reviews_without_coupons)
         if average_stars_of_coupons_reviews != "na" and average_stars_of_coupons_without_reviews != "na":
             #yield category, ["diference", average_stars_of_coupons_without_reviews - average_stars_of_coupons_reviews, number_of_reviews_with_coupons, number_of_reviews_without_coupons]
-            yield category, ["diference", average_stars_of_coupons_without_reviews - average_stars_of_coupons_reviews]
+            yield "diference", [category, average_stars_of_coupons_reviews - average_stars_of_coupons_without_reviews]
+
+    def get_max_and_min_categories_reducer(self, key, categories):
+        categories = list(categories)
+        for i in range(0, LIST_SIZE):
+            max_value = max(categories, key=lambda item: item[1])
+            categories.remove(max_value)
+            yield "maximo", max_value
+        for i in range(0, LIST_SIZE):
+            min_value = min(categories, key=lambda item: item[1])
+            categories.remove(min_value)
+            yield "minimo", min_value
 
     def steps(self):
         return [
@@ -86,6 +99,9 @@ class UniqueReview(MRJob):
             MRStep(
                 mapper=self.map_by_categories,
                 reducer=self.category_reducer
+                ),
+            MRStep(
+                reducer=self.get_max_and_min_categories_reducer
                 )
             ]
 
