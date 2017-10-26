@@ -40,9 +40,10 @@ class UniqueReview(MRJob):
     def map_by_categories(self, key, business_info):
         categories = business_info[0]
         for element in business_info:
-            if element[INPUT_LABEL] == "review":
-                for category in categories:
-                    yield category, element[REVIEW_STARS]
+            if len(element) > 0:
+                if element[INPUT_LABEL] == "review":
+                    for category in categories:
+                        yield category, element[REVIEW_STARS]
 
     def category_reducer(self, category, stars):
         stars_list = list(stars)
