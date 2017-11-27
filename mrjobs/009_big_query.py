@@ -1,11 +1,12 @@
 from __future__ import division
 import operator
-
 from mrjob.job import MRJob
 from mrjob.step import MRStep
 from mrjob.protocol import JSONValueProtocol
+from mr3px.csvprotocol import CsvProtocol
 import time
 import tools
+import csv
 
 INPUT_LABEL = 0
 BUSINESS_CATEGORIES = 2
@@ -47,8 +48,12 @@ class ImpactPerBuiness(MRJob):
                 elif business[INPUT_LABEL] == "review":
                     stars_without_coupon.append(business[REVIEW_STARS])
         if len(business_categories) > 0 and len(stars_with_coupon) > 0 and len(stars_without_coupon):
-            yield business_name, ["with coupon", reduce(lambda x, y: x + y, stars_with_coupon) / len(stars_with_coupon), business_categories]
-            yield business_name, ["without coupon", reduce(lambda x, y: x + y, stars_without_coupon) / len(stars_without_coupon), business_categories]
+            coupon_output = ["with coupon", reduce(lambda x, y: x + y, stars_with_coupon) / len(stars_with_coupon), business_categories]
+            yield business_name, coupon_output
+            writer.writerow(coupon_output)
+            no_coupon_output = ["without coupon", reduce(lambda x, y: x + y, stars_without_coupon) / len(stars_without_coupon), business_categories]
+            yield business_name, no_coupon_output
+            writer.writerow(no_coupon_output)
 
     def steps(self):
         return [
@@ -60,5 +65,9 @@ class ImpactPerBuiness(MRJob):
 
 if __name__ == '__main__':
     start_time = time.time()
+    header = ["name", "has_coupon", "average", "categories"]
+    output_file  = open('data.csv', "wb")
+    writer = csv.writer(output_file)
+    writer.writerow(header)
     ImpactPerBuiness.run()
     print 'Time lapsed: {} seconds.'.format(time.time() - start_time)
