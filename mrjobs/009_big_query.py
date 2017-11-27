@@ -48,10 +48,10 @@ class ImpactPerBuiness(MRJob):
                 elif business[INPUT_LABEL] == "review":
                     stars_without_coupon.append(business[REVIEW_STARS])
         if len(business_categories) > 0 and len(stars_with_coupon) > 0 and len(stars_without_coupon):
-            coupon_output = ["with coupon", reduce(lambda x, y: x + y, stars_with_coupon) / len(stars_with_coupon), business_categories]
+            coupon_output = [business_name.encode('utf-8'), "with coupon", reduce(lambda x, y: x + y, stars_with_coupon) / len(stars_with_coupon), business_categories]
             yield business_name, coupon_output
             writer.writerow(coupon_output)
-            no_coupon_output = ["without coupon", reduce(lambda x, y: x + y, stars_without_coupon) / len(stars_without_coupon), business_categories]
+            no_coupon_output = [business_name.encode('utf-8'), "without coupon", reduce(lambda x, y: x + y, stars_without_coupon) / len(stars_without_coupon), business_categories]
             yield business_name, no_coupon_output
             writer.writerow(no_coupon_output)
 
