@@ -55,12 +55,14 @@ class ImpactPerBuiness(MRJob):
                     stars_without_coupon.append(business[REVIEW_STARS])
         if len(business_categories) > 0 and len(stars_with_coupon) > 0 and len(stars_without_coupon):
             for coupon in coupon_list:
-                coupon_output = [business_name.encode('utf-8'), coupon, reduce(lambda x, y: x + y, stars_with_coupon) / len(stars_with_coupon), business_categories]
-                writer.writerow(coupon_output)
-                yield business_name, coupon_output
-            no_coupon_output = [business_name.encode('utf-8'), "No coupon", reduce(lambda x, y: x + y, stars_without_coupon) / len(stars_without_coupon), business_categories]
-            writer.writerow(no_coupon_output)
-            yield business_name, no_coupon_output
+                for category in business_categories:
+                    coupon_output = [business_name.encode('utf-8'), coupon, reduce(lambda x, y: x + y, stars_with_coupon) / len(stars_with_coupon), category]
+                    writer.writerow(coupon_output)
+                    yield business_name, coupon_output
+            for category in business_categories:
+                no_coupon_output = [business_name.encode('utf-8'), "No coupon", reduce(lambda x, y: x + y, stars_without_coupon) / len(stars_without_coupon), category]
+                writer.writerow(no_coupon_output)
+                yield business_name, no_coupon_output
 
 
     def steps(self):
