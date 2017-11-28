@@ -5,9 +5,6 @@ from mrjob.step import MRStep
 from mrjob.protocol import JSONValueProtocol
 import time
 import tools
-import numpy as np
-import csv
-
 
 INPUT_LABEL = 0
 BUSINESS_CATEGORIES = 1
@@ -23,18 +20,21 @@ class UniqueReview(MRJob):
         if data.get("review_id"):
             # business_id, ["review", user_id, stars]
             COUPONS = tools.read_coupons_file()
-            if any(word in data['text'].lower() for word in COUPONS):
-                yield data["business_id"], ["review", data["review_id"], data["stars"] ]
+            coupon = None
+            for word in COUPONS:
+                if word in data['text'].lower():
+                    coupon = word
+            yield data["business_id"], ["review", data["review_id"], data["stars"], coupon]
         elif data.get("business_id"):
             # business_id, ["business", categories]
-            yield data["business_id"], ["categories", data["categories"]]
+            yield data["business_id"], ["categories", data["categories"], data['name']]
 
     def reducer_join(self, business_id, values):
         business_list = list(values)
         business_info = []
         for business in business_list:
             if business[INPUT_LABEL] == "categories":
-                business_info.append(business[BUSINESS_CATEGORIES])
+                business_info.append([business[1], business[2]])
             else:
                 business_info.append(business)
         if len(business_info) > 1:
@@ -52,8 +52,7 @@ class UniqueReview(MRJob):
         stars_list = list(stars)
         number_of_reviews = len(stars_list)
         average_stars = sum(stars_list)/float(number_of_reviews)
-
-        writer.writerow((category, average_stars, np.std(stars_list)))
+        yield category, average_stars
 
     def steps(self):
         return [
@@ -61,17 +60,14 @@ class UniqueReview(MRJob):
                 mapper=self.separate_map_by_stars_and_categories,
                 reducer=self.reducer_join
                 ),
-            MRStep(
-                mapper=self.map_by_categories,
-                reducer=self.category_reducer
-                )
+            # MRStep(
+            #     mapper=self.map_by_categories,
+            #     # reducer=self.category_reducer
+            #     )
             ]
 
 
 if __name__ == '__main__':
-    f = open('result_01_full.csv', 'wb')
-    writer = csv.writer(f)
-    writer.writerow(('category', 'mean', 'desv'))
     start_time = time.time()
     UniqueReview.run()
     print 'Time lapsed: {} seconds.'.format(time.time() - start_time)
